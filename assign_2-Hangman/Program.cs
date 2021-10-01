@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace assign_2_Hangman
+namespace Hangman
 {
     class Program
     {
@@ -14,14 +14,17 @@ namespace assign_2_Hangman
 
         static void Main(string[] args)
         {
-            GetWord();
+            selectedWord = GetWord();
             SetHideString();
 
 
             while (true)
             {
                 CheckHealth();
-                CheckWord();
+                if (CheckWord())
+                {
+                    GameWon();
+                }
                 PrintHealth();
                 Console.WriteLine();
                 PrintWord();
@@ -39,14 +42,17 @@ namespace assign_2_Hangman
 
         }
 
-        public static void GetWord()
+        public static string GetWord()
         {
-            Random rnd = new Random();
-            string[] words = new string[3] { "animal", "house", "staircase" };
 
-            int rndLengthWord = rnd.Next(0, words.Length);
+            FileHandler file = new FileHandler();
 
-            selectedWord =  words[rndLengthWord];
+            string text = file.GetText("words.txt");
+
+            string[] words = file.SeperateCommas(text);
+            string word = file.RandomWord(words);
+
+            return word;
         }
 
         public static void Guess(String str)  {
@@ -65,12 +71,9 @@ namespace assign_2_Hangman
             Console.WriteLine(falseGuess);
         }
 
-        public static void HandleLetter(char letter)
+        public static Boolean checkLetterAlreadyExist(char letter)
         {
             Boolean checkIfLetterExist = false;
-
-            letter = char.ToLower(letter);
-
             for (int i = 0; i < falseGuess.Length; i++)
             {
                 if (falseGuess[i] == letter)
@@ -79,24 +82,35 @@ namespace assign_2_Hangman
                 }
             }
 
-            if (checkIfLetterExist)
-            {
-                Console.WriteLine("Letter Does Already Exist!");
-            }
-            else
+            return checkIfLetterExist;
+        }
+
+        public static Boolean CheckIfLetterExistInWord(char letter)
+        {
+            Boolean checkIfIncorrect = false;
+
+            foreach (var letters in showTextList)
             {
 
-                Boolean checkIfIncorrect = false;
-
-                foreach (var letters in showTextList)
+                if (letters.existingLetter == letter && letters.showingLetter != letter)
                 {
-
-                    if (letters.existingLetter == letter && letters.showingLetter != letter)
-                    {
-                        letters.showingLetter = letter;
-                        checkIfIncorrect = true;
-                    }
+                    letters.showingLetter = letter;
+                    checkIfIncorrect = true;
                 }
+            }
+
+            return checkIfIncorrect;
+        }
+
+        public static void HandleLetter(char letter)
+        {
+            letter = char.ToLower(letter);
+
+            Boolean checkIfLetterExist = checkLetterAlreadyExist(letter);
+
+            if (!checkIfLetterExist)
+            {
+                Boolean checkIfIncorrect = CheckIfLetterExistInWord(letter);
 
                 falseGuess.Append(new Char[] { letter });
 
@@ -104,8 +118,10 @@ namespace assign_2_Hangman
                 {
                     health++;
                 }
-                
-
+            }
+            else
+            {
+                Console.WriteLine("Letter Does Already Exist!");
             }
             
         }
@@ -129,7 +145,7 @@ namespace assign_2_Hangman
             }
         }
 
-        public static void CheckWord()
+        public static Boolean CheckWord()
         {
             Boolean checkIfAllCharIsGuess = true;
 
@@ -141,10 +157,7 @@ namespace assign_2_Hangman
                 }
             }
 
-            if (checkIfAllCharIsGuess)
-            {
-                GameWon();
-            }
+            return checkIfAllCharIsGuess;
         }
 
         public static void PrintHealth()
